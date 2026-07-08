@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-white dark:bg-black transition-colors duration-300;
+}
+
+/* Responsive base styles */
+@layer base {
+  html {
+    @apply text-sm sm:text-base;
+  }
+  
+  body {
+    @apply overflow-hidden;
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+@media (min-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-200 dark:bg-gray-700;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-400 dark:bg-gray-500 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500 dark:bg-gray-400;
+}
+
+.text-shadow {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Dock neighbor animation */
+.peer:hover + button {
+  transform: scale(1.2) translateY(-0.5rem);
+}
+
+button:has(+ .peer:hover) {
+  transform: scale(1.2) translateY(-0.5rem);
+}
+
+/* Apple logo animation */
+@keyframes apple-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-apple-bounce {
+  animation: apple-bounce 2s infinite;
+}
+
+/* Responsive utilities */
+@layer utilities {
+  .safe-area {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .dock-mobile {
+    @apply fixed bottom-2 left-1/2 transform -translate-x-1/2 max-w-[95vw] overflow-x-auto;
+  }
+  
+  .window-mobile {
+    @apply !fixed !inset-2 !w-auto !h-auto !left-2 !right-2 !top-8 !bottom-2;
+  }
+  
+  .desktop-icons-mobile {
+    @apply grid grid-cols-4 gap-4 p-4 absolute right-2 top-8;
+  }
+}
+

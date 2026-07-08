@@ -1,0 +1,188 @@
+package main
+
+import (
+	"lyrics-api-go/cache"
+	"lyrics-api-go/config"
+	"lyrics-api-go/logcolors"
+	"lyrics-api-go/middleware"
+	"lyrics-api-go/services/notifier"
+	"lyrics-api-go/services/providers/ttml"
+	"lyrics-api-go/stats"
+	"os"
+	"sync"
+	"time"
+
+	"golang.org/x/time/rate"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/rs/cors"
+	log "github.com/sirupsen/logrus"
+)
+
+var conf = config.Get()
+
+var (
+	persistentCache *cache.PersistentCache
+	cacheStats      *cache.StatsCache
+	statsStore      *stats.Store
+	inFlightReqs    sync.Map
+)
+
+func init() {
+	// Load .env first so config is available for logger setup
+	err := godotenv.Load()
+	if err != nil {
+		// Can't use colored log prefix here since formatter isn't set yet
+		log.Warn("Error loading .env file, using environment variables")
+	}
+
+	// Configure logger based on feature flag
+	cfg := config.Get()
+	if cfg.FeatureFlags.PrettyLogs {
+		log.SetFormatter(&log.TextFormatter{
+			ForceColors:     true,
+			FullTimestamp:   true,
+			TimestampFormat: "15:04:05",
+		})
+	} else {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
+}
+
+func main() {
+	// Initialize persistent cache
+	var err error
+	cachePath := getEnvOrDefault("CACHE_DB_PATH", "./cache.db")
+	backupPath := getEnvOrDefault("CACHE_BACKUP_PATH", "./backups")
+	persistentCache, err = cache.NewPersistentCache(cachePath, backupPath, conf.FeatureFlags.CacheCompression)
+	if err != nil {
+		notifier.PublishServerStartupFailed("cache", err)
+		log.Fatalf("Failed to initialize cache: %v", err)
+	}
+	defer persistentCache.Close()
+
+	// Initialize stats store (separate from cache to preserve stats across cache clears)
+	statsPath := getEnvOrDefault("STATS_DB_PATH", "./stats.db")
+	statsStore, err = stats.NewStore(statsPath)
+	if err != nil {
+		notifier.PublishServerStartupFailed("stats_store", err)
+		log.Fatalf("Failed to initialize stats store: %v", err)
+	}
+	defer statsStore.Close()
+
+	// Load persisted stats from previous runs
+	if err := statsStore.Load(); err != nil {
+		log.Warnf("%s Failed to load persisted stats: %v", logcolors.LogStats, err)
+	}
+
+	// Start auto-saving stats every 5 minutes
+	statsStore.StartAutoSave(5 * time.Minute)
+
+	// Initialize alert handler for system notifications
+	alertNotifiers := setupNotifiers()
+	if len(alertNotifiers) > 0 {
+		alertHandler := notifier.NewAlertHandler(notifier.AlertConfig{
+			Notifiers:        alertNotifiers,
+			CooldownDuration: 15 * time.Minute,
+		})
+		alertHandler.Start()
+		log.Infof("%s Alert handler initialized with %d notifier(s)", logcolors.LogNotifier, len(alertNotifiers))
+	}
+
+	// Initialize metadata and indexes buckets (separate from cache bucket)
+	initMetadataBuckets()
+
+	// Counter reconciliation loop. Counters are live (updated transactionally with
+	// Set/Delete) so /stats is microseconds. The weekly reconcile only corrects
+	// drift from rare type-flips.
+	cacheStats = cache.NewStatsCache(persistentCache)
+	cacheStats.StartBackgroundRefresh(7*24*time.Hour, nil)
+
+	// Start bearer token auto-scraper (proactive refresh based on JWT expiry)
+	ttml.StartBearerTokenMonitor()
+
+	// Start MUT health check scheduler (daily canary checks)
+	ttml.StartHealthCheckScheduler()
+
+	// Start memory monitor (logs RSS, alerts at threshold)
+	startMemoryMonitor(cachePath)
+
+	// Start file-descriptor monitor (logs open fds, alerts before the limit is hit)
+	startFDMonitor()
+
+	router := mux.NewRouter()
+	setupRoutes(router)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"https://music.youtube.com", "http://localhost:*", "https://lyrics-api-docs.boidu.dev", "https://braccato.boidu.dev", "https://composer.boidu.dev", "https://composer.betterlyrics.org"},
+		AllowCredentials: true,
+	})
+
+	limiter := middleware.NewIPRateLimiter(
+		rate.Limit(conf.Configuration.RateLimitPerSecond),
+		conf.Configuration.RateLimitBurstLimit,
+		rate.Limit(conf.Configuration.CachedRateLimitPerSecond),
+		conf.Configuration.CachedRateLimitBurstLimit,
+	)
+	limiter.StartCleanup(5*time.Minute, 10*time.Minute)
+
+	loggedRouter := middleware.LoggingMiddleware(router)
+	corsHandler := c.Handler(loggedRouter)
+
+	// API key middleware - if API_KEY_REQUIRED is true, protected paths require API key
+	// for cache misses. Cache hits are served without API key (cache-first approach).
+	apiKeyHandler := middleware.APIKeyMiddleware(
+		conf.Configuration.APIKey,
+		conf.Configuration.APIKeyRequired,
+		config.APIKeyProtectedPaths,
+		apiKeyRequiredForFreshKey,
+		apiKeyAuthenticatedKey,
+		apiKeyInvalidKey,
+	)(corsHandler)
+
+	handler := limitMiddleware(apiKeyHandler, limiter)
+
+	// Get account info for startup notification
+	activeAccounts, _ := conf.GetTTMLAccounts()
+	allAccounts, _ := conf.GetAllTTMLAccounts()
+
+	// Collect out-of-service account names
+	var outOfServiceNames []string
+	for _, acc := range allAccounts {
+		if acc.OutOfService {
+			outOfServiceNames = append(outOfServiceNames, acc.Name)
+		}
+	}
+
+	// Log API key status
+	if conf.Configuration.APIKeyRequired {
+		if conf.Configuration.APIKey != "" {
+			log.Infof("%s API key required for cache misses on paths: %v", logcolors.LogAPIKey, config.APIKeyProtectedPaths)
+		} else {
+			log.Warnf("%s API key required but not configured!", logcolors.LogAPIKey)
+		}
+	} else if conf.Configuration.APIKey != "" {
+		log.Infof("%s API key configured for rate limit bypass only", logcolors.LogAPIKey)
+	}
+
+	// Log cache-only mode status
+	if conf.FeatureFlags.CacheOnlyMode {
+		log.Warnf("%s FF_CACHE_ONLY_MODE is enabled - all upstream requests are disabled, serving from cache only", logcolors.LogWarning)
+	}
+
+	log.Infof("%s Listening on port %s", logcolors.LogServer, port)
+
+	// Publish server started event
+	notifier.PublishServerStarted(port, len(activeAccounts), outOfServiceNames)
+
+	srv := newHTTPServer(":"+port, handler)
+	log.Fatal(srv.ListenAndServe())
+}
