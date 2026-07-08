@@ -14,7 +14,8 @@ import {
   Database,
   Heart,
   Loader2,
-  Music
+  Music,
+  Monitor
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -37,6 +38,26 @@ interface ProjectData {
 }
 
 const projectsData: ProjectData[] = [
+  {
+    id: "portfolio",
+    title: "macOS Portfolio",
+    subtitle: "Interactive macOS-Themed Web Experience",
+    description: `A highly interactive, modern, and sleek personal portfolio website built with Next.js, featuring a stunning macOS-inspired design aesthetic. It bridges the gap between a traditional resume and an interactive operating system experience right in your browser.
+
+### ✨ Features
+- **App Store**: A beautiful showcase of projects.
+- **Music Player**: JioSaavn API integrated streaming player.
+- **Terminal & VS Code**: Functional command-line and code editor interfaces.
+- **Flappy Bird**: A fully playable clone of the classic game!
+- **Dynamic Wallpapers & Theme**: Beautiful superhero wallpapers with light/dark mode support.`,
+    deployedUrl: "https://github.com/Marvelousshivam/Marvelousshivam-portfolio",
+    technologies: ["Next.js", "React", "Tailwind CSS", "Framer Motion", "TypeScript"],
+    category: "Development",
+    icon: <Monitor className="w-8 h-8 text-white" />,
+    color: "from-blue-600 to-cyan-500",
+    isFeatured: true,
+    actionLabel: "GITHUB"
+  },
   {
     id: "usmusic",
     title: "USMusic",
