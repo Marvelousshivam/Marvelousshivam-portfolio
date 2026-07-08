@@ -54,7 +54,7 @@ const projectsData: ProjectData[] = [
     category: "Development",
     icon: <Monitor className="w-8 h-8 text-white" />,
     color: "from-blue-600 to-cyan-500",
-    isFeatured: true,
+    isFeatured: false,
     actionLabel: "GITHUB"
   },
   {
@@ -140,7 +140,7 @@ USMusic acts as a powerful aggregator and player, bridging multiple platforms in
     category: "Discover",
     icon: <Music className="w-8 h-8 text-white" />,
     color: "from-purple-600 to-indigo-900",
-    isFeatured: false,
+    isFeatured: true,
     actionLabel: "GET"
   },
   {
