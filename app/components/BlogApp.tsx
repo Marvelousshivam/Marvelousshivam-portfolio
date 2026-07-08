@@ -11,10 +11,8 @@ import {
   Search,
   BookOpen,
   Copy,
-  Clock,
-  Menu
+  Clock
 } from 'lucide-react';
-import Image from 'next/image';
 
 interface Post {
   slug: string;
@@ -50,6 +48,7 @@ const BlogApp = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [activePost, setActivePost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isMobile, setIsMobile] = useState(false);
   const closeApp = useStore((state) => state.closeApp);
   const contentRef = useRef<HTMLDivElement>(null);

@@ -7,7 +7,6 @@ import {
   Star, 
   ChevronLeft,
   Share,
-  Download,
   Film,
   Video,
   MessageCircle,
@@ -212,6 +211,7 @@ USMusic acts as a powerful aggregator and player, bridging multiple platforms in
   }
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SidebarItem = ({ icon: Icon, label, isActive, onClick }: any) => (
   <button
     onClick={onClick}
@@ -386,12 +386,12 @@ const Projects: React.FC = () => {
                       <ReactMarkdown 
                         rehypePlugins={[rehypeRaw]}
                         components={{
-                          img: ({ node, src, ...props }) => {
+                          img: ({ src, alt, ...props }) => {
                             let finalSrc = src;
                             if (finalSrc && !finalSrc.startsWith('http') && !finalSrc.startsWith('data:') && rawBaseUrl) {
                               finalSrc = `${rawBaseUrl}/${finalSrc.replace(/^\//, '')}`;
                             }
-                            return <img {...props} src={finalSrc || ''} className="inline-block max-w-full h-auto" />;
+                            return <img {...props} src={finalSrc || ''} alt={alt || "readme image"} className="inline-block max-w-full h-auto" />;
                           }
                         }}
                       >

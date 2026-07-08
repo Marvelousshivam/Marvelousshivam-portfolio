@@ -204,7 +204,7 @@ const VSCodeEditor: React.FC = () => {
         } else {
           setTerminalOutput(`Error: Execution for .${ext} files is not supported in this environment.\n`);
         }
-      } catch (_err) {
+      } catch {
         setTerminalOutput("An unexpected error occurred during execution.\n");
       } finally {
         setIsRunning(false);

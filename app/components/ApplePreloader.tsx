@@ -10,18 +10,19 @@ const OSBootPreloader = () => {
   const [isClient, setIsClient] = useState(false);
 
   const bootSequence = useMemo(() => [
-    { text: 'Initializing BIOS...', delay: 500 },
-    { text: 'Performing POST (Power-On Self-Test)...', delay: 600 },
-    { text: 'Detecting hardware components...', delay: 400 },
-    { text: 'Loading boot loader...', delay: 300 },
-    { text: 'Initializing kernel...', delay: 500 },
-    { text: 'Mounting root filesystem...', delay: 400 },
-    { text: 'Starting system services...', delay: 600 },
-    { text: 'Configuring network interfaces...', delay: 400 },
-    { text: 'Initializing graphical subsystem...', delay: 500 },
-    { text: 'Loading user environment...', delay: 300 },
+    { text: 'BIOS Version 3.1.4 - Initializing...', delay: 200 },
+    { text: 'Establishing secure connection to Vercel edge network...', delay: 300 },
+    { text: 'Mounting virtual DOM...', delay: 200 },
+    { text: 'Loading portfolio modules [■■■■■■■■■■] 100%', delay: 400 },
+    { text: 'Decrypting project files... SUCCESS', delay: 200 },
+    { text: 'Compiling Tailwind stylesheets...', delay: 300 },
+    { text: 'Injecting Framer Motion physics engine...', delay: 200 },
+    { text: 'Initializing macOS graphic subsystem...', delay: 400 },
+    { text: 'Waking up dormant AI algorithms...', delay: 200 },
+    { text: 'Loading user environment: SHIVAM_RAJ...', delay: 300 },
+    { text: 'Bypassing mainframe security... ACCESS GRANTED', delay: 300 },
     { text: 'Performing final system checks...', delay: 400 },
-    { text: 'SYSTEM READY', delay: 1000 },
+    { text: 'SYSTEM READY', delay: 600 },
   ], []);
 
   const addBootStep = useCallback((step: string) => {

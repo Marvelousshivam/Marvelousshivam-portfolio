@@ -1,16 +1,4 @@
-import { 
-  Music, 
-  Code, 
-  Globe, 
-  Terminal,
-  User,
-  Briefcase,
-  Mail,
-  File,
-  Gamepad2,
-  ClipboardList,
-  Trash2
-} from 'lucide-react'
+// Imports removed to fix lint
 import {
   FinderIcon,
   SafariIcon,

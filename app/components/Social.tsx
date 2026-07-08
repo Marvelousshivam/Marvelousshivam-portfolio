@@ -22,7 +22,7 @@ const ConnectWithMe = () => {
             Contact
           </h2>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Let's build something amazing together.
+            Let&apos;s build something amazing together.
           </p>
         </div>
 

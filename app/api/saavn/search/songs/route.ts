@@ -30,8 +30,8 @@ export async function GET(request: Request) {
                 results
             }
         });
-    } catch (e: any) {
-        console.error('Search songs error:', e.message);
+    } catch (e: unknown) {
+        console.error('Search songs error:', e instanceof Error ? e.message : String(e));
         return NextResponse.json({ success: false, error: 'Search failed' }, { status: 502 });
     }
 }

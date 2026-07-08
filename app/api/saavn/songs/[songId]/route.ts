@@ -18,8 +18,8 @@ export async function GET(
 
         const song = transformSong(data.songs[0]);
         return NextResponse.json({ success: true, data: [song] });
-    } catch (e: any) {
-        console.error('Get song error:', e.message);
+    } catch (e: unknown) {
+        console.error('Get song error:', e instanceof Error ? e.message : String(e));
         return NextResponse.json({ success: false, error: 'Song fetch failed' }, { status: 502 });
     }
 }
