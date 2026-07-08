@@ -62,12 +62,5 @@ Huge thanks to **[ekas-7](https://github.com/ekas-7/MAC-OS-Themed-Portfolio)** f
 - macOS design inspiration from Apple.
 - Next.js team for the amazing framework.
 
-## 📞 Contact
-
-**Shivam Raj**  
-Developer & Tech Enthusiast  
-
-- **GitHub**: [Marvelousshivam](https://github.com/Marvelousshivam)
-
 ---
-*Built with ❤️ utilizing Vibecoding methodologies.*
+Made with ❤️ by Shivam
