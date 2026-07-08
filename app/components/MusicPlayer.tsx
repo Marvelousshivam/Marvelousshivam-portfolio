@@ -283,7 +283,6 @@ export default function MusicPlayer() {
       let combined: Track[] = [];
 
       if (saavnRes.status === 'fulfilled' && saavnRes.value.success) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const sTracks = saavnRes.value.data.results.map((t: Record<string, unknown>) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const tAny = t as any;
@@ -301,14 +300,13 @@ export default function MusicPlayer() {
       }
 
       if (ytmRes.status === 'fulfilled' && Array.isArray(ytmRes.value)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const yTracks = ytmRes.value.slice(0, 5).map((t: Record<string, unknown>) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const tAny = t as any;
           return {
             id: `ytm-${tAny.videoId}`,
             name: tAny.title,
-            artist: tAny.artists?.map((a:any) => a.name).join(', ') || "Unknown",
+            artist: tAny.artists?.map((a: { name: string }) => a.name).join(', ') || "Unknown",
             albumArt: tAny.thumbnails?.[tAny.thumbnails?.length - 1]?.url || "",
             src: `${YTM_API}/stream/${tAny.videoId}`,
             source: 'ytm' as const
@@ -330,7 +328,6 @@ export default function MusicPlayer() {
       const res = await fetch(`${SAAVN_API}/playlists?id=${id}&limit=20`);
       const data = await res.json();
       if (data.success && data.data && data.data.songs) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tracks = data.data.songs.map((t: Record<string, unknown>) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const tAny = t as any;
