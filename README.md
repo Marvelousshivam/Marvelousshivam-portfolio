@@ -9,7 +9,6 @@ Welcome to my personal portfolio! This is a highly interactive, modern, and slee
 
 ## 🚀 What's New
 This portfolio has been heavily customized and upgraded with new features:
-- **USMusic Integration**: Added my custom, ad-free Android Music Player (USMusic) directly into the App Store component with proper Markdown parsing and direct `.apk` downloads.
 - **JioSaavn API Streaming**: The native Music Player app now hooks directly into the JioSaavn API to stream high-quality audio dynamically instead of relying on hardcoded static tracks.
 - **Superhero Wallpapers**: Added a curated collection of beautiful, high-quality wallpapers (Superman, The Batman, Spider-Man) with a fixed Next.js Image caching and rendering system.
 - **App Store Refinements**: Redesigned the Projects window to feel like a native App Store, complete with proper Markdown rendering for app descriptions and functional `GET`/`OPEN` buttons.
@@ -17,7 +16,7 @@ This portfolio has been heavily customized and upgraded with new features:
 
 ## ✨ Features & Built-in Apps
 
-- 📦 **App Store (Projects)**: A beautiful, interactive showcase of my projects including Netphlixx, Screen-X, and USMusic.
+- 📦 **App Store (Projects)**: A beautiful, interactive showcase of my projects including Netphlixx and Screen-X.
 - 🎵 **Music Player**: A fully functional, Apple Music-styled streaming player with live search and dynamic glassmorphism blurred backgrounds.
 - 💻 **VS Code**: A web-based code editor interface mimicking the real Visual Studio Code experience.
 - 🖥️ **Terminal**: A working command-line interface to interact with my portfolio via text commands.
