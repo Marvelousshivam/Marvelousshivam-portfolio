@@ -34,8 +34,8 @@ export async function saavnFetch(endpoint: string, params: Record<string, string
         });
 
         return { data: await response.json(), ok: response.ok };
-    } catch (err: any) {
-        console.error('saavnFetch error:', err.message);
+    } catch (err: unknown) {
+        console.error('saavnFetch error:', err instanceof Error ? err.message : String(err));
         return { data: null, ok: false };
     }
 }
@@ -65,8 +65,8 @@ function decryptMediaUrl(encryptedUrl: string) {
             quality: q.bitrate,
             url: decryptedLink.replace('_96', q.id)
         }));
-    } catch (e: any) {
-        console.error('Decrypt failed:', e.message);
+    } catch (e: unknown) {
+        console.error('Decrypt failed:', e instanceof Error ? e.message : String(e));
         return [];
     }
 }
@@ -80,8 +80,10 @@ function createImageLinks(link: string) {
     }));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapArtists(artistMap: any) {
     if (!artistMap) return { primary: [], featured: [], all: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapFn = (a: any) => ({ id: a.id, name: a.name, role: a.role, type: a.type, image: createImageLinks(a.image), url: a.perma_url });
     return {
         primary: (artistMap.primary_artists || []).map(mapFn),
@@ -90,6 +92,7 @@ function mapArtists(artistMap: any) {
     };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function transformSong(song: any) {
     if (!song || !song.id) return null;
     return {

@@ -155,11 +155,11 @@ const VSCodeEditor: React.FC = () => {
           };
           
           try {
-            // eslint-disable-next-line no-new-func
             const execute = new Function(selectedFile.content);
             execute();
-          } catch (execErr: any) {
-            output += `Error: ${execErr.message}\n`;
+          } catch (execErr: unknown) {
+            const errMessage = execErr instanceof Error ? execErr.message : String(execErr);
+            output += `Error: ${errMessage}\n`;
           } finally {
             console.log = originalConsoleLog; // Always restore!
           }
@@ -204,7 +204,7 @@ const VSCodeEditor: React.FC = () => {
         } else {
           setTerminalOutput(`Error: Execution for .${ext} files is not supported in this environment.\n`);
         }
-      } catch (err) {
+      } catch (_err) {
         setTerminalOutput("An unexpected error occurred during execution.\n");
       } finally {
         setIsRunning(false);

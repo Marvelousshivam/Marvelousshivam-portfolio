@@ -73,7 +73,7 @@ const WorkExperience: React.FC = () => {
           <div className="absolute left-[27px] sm:left-[39px] top-6 bottom-6 w-0.5 bg-gradient-to-b from-gray-200 via-gray-300 to-transparent dark:from-gray-700 dark:via-gray-600 dark:to-transparent hidden sm:block"></div>
 
           <div className="space-y-12">
-            {experiences.map((exp, index) => (
+            {experiences.map((exp) => (
               <div key={exp.id} className="relative flex flex-col sm:flex-row gap-6 sm:gap-12 group">
                 
                 {/* Timeline Icon */}
