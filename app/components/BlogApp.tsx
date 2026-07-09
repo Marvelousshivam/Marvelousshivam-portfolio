@@ -22,21 +22,63 @@ interface Post {
 }
 
 const components = {
-  MagazinePullQuote: ({ text }: { text: string }) => (
-    <div className="my-8 sm:my-12 pl-6 sm:pl-8 border-l-4 border-gray-900 dark:border-white">
-      <p className="text-xl sm:text-2xl lg:text-3xl font-serif italic font-bold text-gray-900 dark:text-gray-100 tracking-tight leading-snug">
-        &quot;{text}&quot;
-      </p>
+  MagazineHeader: ({ title, subtitle }: { title: string, subtitle: string }) => (
+    <div className="w-full mb-16 md:mb-24 mt-8 md:mt-16">
+      <h1 className="text-5xl sm:text-7xl lg:text-[7rem] font-black tracking-tighter leading-[0.85] mb-6 uppercase text-transparent bg-clip-text bg-gradient-to-br from-gray-900 to-gray-400 dark:from-white dark:to-gray-500 break-words">
+        {title}
+      </h1>
+      <div className="w-24 md:w-48 h-1 bg-blue-500 mb-8"></div>
+      <h2 className="text-2xl sm:text-4xl font-light italic text-gray-500 dark:text-gray-400 max-w-4xl leading-snug">
+        {subtitle}
+      </h2>
+    </div>
+  ),
+  DropCap: ({ children }: { children: React.ReactNode }) => (
+    <div className="text-xl md:text-2xl leading-relaxed font-serif first-letter:text-[6rem] sm:first-letter:text-[8rem] first-letter:font-black first-letter:text-gray-900 dark:first-letter:text-white first-letter:mr-6 first-letter:mt-4 first-letter:float-left first-letter:leading-[0.7] text-gray-800 dark:text-gray-200">
+      {children}
+    </div>
+  ),
+  AsymmetricGrid: ({ children, reverse = false }: { children: React.ReactNode, reverse?: boolean }) => {
+    const childrenArray = React.Children.toArray(children);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16 my-16 md:my-24 items-center">
+        {childrenArray[0] && (
+          <div className={reverse ? 'md:col-span-5' : 'md:col-span-7'}>
+            {childrenArray[0]}
+          </div>
+        )}
+        {childrenArray[1] && (
+          <div className={reverse ? 'md:col-span-7' : 'md:col-span-5'}>
+            {childrenArray[1]}
+          </div>
+        )}
+      </div>
+    );
+  },
+  BleedImage: ({ src, alt }: { src: string, alt: string }) => (
+    <div className="w-[100vw] relative left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] my-16 md:my-24 h-[400px] md:h-[600px]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+    </div>
+  ),
+  MagazinePullQuote: ({ text, author }: { text: string, author?: string }) => (
+    <div className="my-16 md:my-24 px-4 md:px-0">
+      <div className="border-l-8 border-blue-500 pl-6 md:pl-10">
+        <p className="text-3xl sm:text-4xl lg:text-5xl font-serif italic font-bold text-gray-900 dark:text-white tracking-tight leading-tight">
+          &quot;{text}&quot;
+        </p>
+        {author && <p className="mt-6 text-xl font-medium text-gray-500 uppercase tracking-widest">{author}</p>}
+      </div>
     </div>
   ),
   ImageGrid: ({ images }: { images: string | string[] }) => {
     const imgArray = typeof images === 'string' ? images.split(',') : (images || []);
     return (
-      <div className="grid grid-cols-2 gap-4 my-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 my-16">
         {imgArray.map((img: string, idx: number) => (
-          <div key={idx} className="aspect-[4/3] rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div key={idx} className={`rounded-2xl overflow-hidden bg-gray-200 dark:bg-gray-800 shadow-xl ${idx === 0 ? 'aspect-[4/3] md:translate-y-8' : 'aspect-square md:-translate-y-8'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={img.trim()} alt={`Grid image ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+            <img src={img.trim()} alt={`Grid image ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
           </div>
         ))}
       </div>
@@ -157,7 +199,7 @@ const BlogApp = () => {
       {/* --- MAIN CONTENT AREA --- */}
       <div 
         ref={contentRef}
-        className={`flex-1 overflow-y-auto no-scrollbar relative z-10 transition-all pb-32 md:pb-0 ${!activePost && 'bg-gradient-to-b from-[#F5F5F7] to-white dark:from-[#1E1E1E] dark:to-[#121212]'}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden no-scrollbar relative z-10 transition-all pb-32 md:pb-0 ${!activePost && 'bg-gradient-to-b from-[#F5F5F7] to-white dark:from-[#1E1E1E] dark:to-[#121212]'}`}
       >
         {loading ? (
           <div className="flex items-center justify-center h-full">
@@ -217,22 +259,13 @@ const BlogApp = () => {
         ) : (
           /* READER VIEW (Article) */
           <div className="bg-[#FAF9F6] dark:bg-[#111111] min-h-full">
-            <div className="max-w-3xl mx-auto px-6 py-12 md:py-16 animate-in slide-in-from-right-8 duration-500">
-              {/* Reader Header */}
-              <div className="mb-12 text-center pt-8 md:pt-0">
-                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-widest">{activePost.date}</p>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-[#E8E8E8] tracking-tight leading-tight mb-6">
-                  {activePost.title}
-                </h1>
-                <div className="w-16 h-[1px] bg-gray-300 dark:bg-gray-700 mx-auto"></div>
-              </div>
-
-              {/* Reader Content */}
+            <div className="max-w-5xl mx-auto px-6 md:px-12 py-12 md:py-24 animate-in slide-in-from-right-8 duration-500">
+              {/* Reader Content (Full bleed supported) */}
               <div className="prose prose-lg sm:prose-xl dark:prose-invert max-w-none 
-                prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-900 dark:prose-headings:text-[#E8E8E8]
-                prose-p:text-gray-700 dark:prose-p:text-[#A0A0A0] prose-p:leading-relaxed prose-p:tracking-normal
-                prose-a:text-blue-500 hover:prose-a:text-blue-600 prose-img:rounded-2xl prose-img:shadow-lg
-                prose-strong:text-gray-900 dark:prose-strong:text-[#E8E8E8]"
+                prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-900 dark:prose-headings:text-white
+                prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
+                prose-a:text-blue-500 hover:prose-a:text-blue-600 prose-img:rounded-2xl prose-img:shadow-2xl
+                prose-strong:text-gray-900 dark:prose-strong:text-white overflow-x-hidden"
               >
                 <MDXRemote {...activePost.mdxSource} components={components} />
               </div>

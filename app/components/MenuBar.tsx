@@ -302,10 +302,14 @@ const MenuBar: React.FC<MenuBarProps> = ({ switchWallpaper }) => {
               )}
             </button>
             
-            <div className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"  onClick={handleOpenWallpaperSelector } >
+            <button 
+              type="button"
+              className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"  
+              onClick={handleOpenWallpaperSelector} 
+            >
               <Settings className="h-5 w-5" />
               <span>Change Background</span>
-            </div>
+            </button>
             <div className="flex items-center space-x-3 p-3">
               {renderBatteryIcon()}
               <span>Battery: {batteryStatus.level}% {batteryStatus.charging ? '(Charging)' : ''}</span>

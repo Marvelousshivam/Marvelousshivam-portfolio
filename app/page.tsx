@@ -3,24 +3,40 @@
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import Desktop from "./components/Desktop";
 import Dock from "./components/Dock";
 import MenuBar from "./components/MenuBar";
 import Window from "./components/Window";
 import ApplePreloader from "./components/ApplePreloader";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import VSCodeEditor from "./components/VSCodeEditor";
-import Terminal from "./components/Terminal";
-import ResumeWindow from "./components/ResumeWindow";
-import MusicPlayer from "./components/MusicPlayer";
-import ProfileCard from "./components/AboutMe";
-import ConnectWithMe from "./components/Social";
-import Projects from "./components/Project";
-import FlappyBird from "./components/PacManGame";
-import WorkExperience from "./components/WorkExperience";
-import BlogApp from "./components/BlogApp";
 import Spotlight from "./components/Spotlight";
 import { useStore } from "./store";
+import { APPS } from "./config/apps";
+
+// Lazy loaded components
+const ProfileCard = dynamic(() => import("./components/AboutMe"), { ssr: false });
+const WorkExperience = dynamic(() => import("./components/WorkExperience"), { ssr: false });
+const Projects = dynamic(() => import("./components/Project"), { ssr: false });
+const ConnectWithMe = dynamic(() => import("./components/Social"), { ssr: false });
+const VSCodeEditor = dynamic(() => import("./components/VSCodeEditor"), { ssr: false });
+const BlogApp = dynamic(() => import("./components/BlogApp"), { ssr: false });
+const Terminal = dynamic(() => import("./components/Terminal"), { ssr: false });
+const MusicPlayer = dynamic(() => import("./components/MusicPlayer"), { ssr: false });
+const FlappyBird = dynamic(() => import("./components/PacManGame"), { ssr: false });
+const ResumeWindow = dynamic(() => import("./components/ResumeWindow"), { ssr: false });
+
+const appComponents: Record<string, React.ReactNode> = {
+  'about': <ProfileCard />,
+  'work-experience': <WorkExperience />,
+  'projects': <Projects />,
+  'contact': <ConnectWithMe />,
+  'vscode': <VSCodeEditor />,
+  'browser': <BlogApp />,
+  'terminal': <Terminal />,
+  'music-player': <MusicPlayer />,
+  'flappy-bird': <FlappyBird />,
+};
 
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
@@ -78,7 +94,8 @@ export default function Home() {
   }, [handleKeyDown]);
 
   const handleGlobalClick = useCallback(() => {
-    if (!hasRequestedFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+    // Only attempt fullscreen on desktop
+    if (window.innerWidth > 768 && !hasRequestedFullscreen && document.documentElement.requestFullscreen && !document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => {
         console.warn(`Error attempting to enable fullscreen: ${err.message}`);
       });
@@ -110,54 +127,25 @@ export default function Home() {
             <Desktop toggleWindow={toggleWindow} />
 
             <AnimatePresence>
-              {openApps.includes("about") && (
-                <Window key="about" id="about" title="About Me" defaultSize={{ width: 800, height: 600 }}>
-                  <ProfileCard />
-                </Window>
-              )}
-              {openApps.includes("work-experience") && (
-                <Window key="work-experience" id="work-experience" title="Work Experience">
-                  <WorkExperience />
-                </Window>
-              )}
-              {openApps.includes("projects") && (
-                <Window key="projects" id="projects" title="My Projects">
-                  <Projects />
-                </Window>
-              )}
-              {openApps.includes("contact") && (
-                <Window key="contact" id="contact" title="Contact Me">
-                  <ConnectWithMe />
-                </Window>
-              )}
-              {openApps.includes("vscode") && (
-                <Window key="vscode" id="vscode" title="VS Code">
-                  <VSCodeEditor />
-                </Window>
-              )}
-              {openApps.includes("browser") && (
-                <Window key="browser" id="browser" title="Safari" defaultSize={{ width: 900, height: 650 }} frameless={true}>
-                  <BlogApp />
-                </Window>
-              )}
-              {openApps.includes("terminal") && (
-                <Window key="terminal" id="terminal" title="Terminal" defaultSize={{ width: 600, height: 400 }}>
-                  <Terminal />
-                </Window>
-              )}
-              {openApps.includes("music-player") && (
-                <Window key="music-player" id="music-player" title="Music Player" frameless={true}>
-                  <MusicPlayer />
-                </Window>
-              )}
-              {openApps.includes("flappy-bird") && (
-                <Window key="flappy-bird" id="flappy-bird" title="Flappy Bird">
-                  <FlappyBird />
-                </Window>
-              )}
-              {openApps.includes("resume") && (
-                <ResumeWindow key="resume" />
-              )}
+              {APPS.map((app) => {
+                if (!openApps.includes(app.id)) return null;
+                
+                if (app.id === 'resume') {
+                  return <ResumeWindow key="resume" />;
+                }
+                
+                return (
+                  <Window 
+                    key={app.id} 
+                    id={app.id} 
+                    title={app.title} 
+                    defaultSize={app.defaultSize} 
+                    frameless={app.frameless}
+                  >
+                    {appComponents[app.id]}
+                  </Window>
+                );
+              })}
             </AnimatePresence>
 
             <Dock toggleWindow={toggleWindow} />

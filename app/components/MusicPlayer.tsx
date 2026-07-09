@@ -1,42 +1,15 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Image from 'next/image';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, Search, Loader2, ListMusic, Music, ChevronDown, Repeat, Shuffle, Home, MessageSquare, MoreHorizontal, Maximize2, Minimize2 } from "lucide-react";
 
-const SAAVN_API = "https://jiosaavn-api.shivamrajuniverse616.workers.dev/api";
-const YTM_API = "https://music-cgd8.onrender.com/api";
-
-interface Track {
-  id: string;
-  name: string;
-  artist: string;
-  albumArt: string;
-  src: string;
-  duration?: number;
-  source: 'saavn' | 'ytm';
-}
-
-interface LyricWord {
-  time: number;
-  text: string;
-  duration?: number;
-}
-
-interface LyricLine {
-  time: number;
-  text: string;
-  words?: LyricWord[];
-  duration?: number;
-}
+import { Track, LyricLine, fetchHomePlaylists, searchMusic, fetchPlaylistTracks, fetchTrackLyrics } from "../../lib/musicService";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
 
 export default function MusicPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(1);
   const [isLiked, setIsLiked] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,7 +21,8 @@ export default function MusicPlayer() {
   const [showLyricsPanel, setShowLyricsPanel] = useState(false);
   const [isDetailedPlayerOpen, setIsDetailedPlayerOpen] = useState(false);
   
-  const [homePlaylists, setHomePlaylists] = useState<{title: string, items: unknown[]}[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [homePlaylists, setHomePlaylists] = useState<{title: string, items: any[]}[]>([]);
   const [lyrics, setLyrics] = useState<LyricLine[] | 'loading' | 'error' | null>(null);
 
   // Mobile specific state
@@ -56,198 +30,89 @@ export default function MusicPlayer() {
   const [mobileView, setMobileView] = useState<'art' | 'lyrics'>('art');
   const touchStartY = useRef<number | null>(null);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const next = useCallback(() => {
+    if (!currentTrack || queue.length === 0) return;
+    const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
+    const nextIndex = (currentIndex + 1) % queue.length;
+    setCurrentTrack(queue[nextIndex]);
+  }, [currentTrack, queue]);
+
+  const {
+    isPlaying,
+    progress,
+    duration,
+    volume,
+    setVolume,
+    playTrack: playAudioTrack,
+    togglePlay,
+    seek
+  } = useAudioPlayer({ onNext: next });
 
   useEffect(() => {
-    fetchHomeData();
+    fetchHomePlaylists().then(data => setHomePlaylists(data));
   }, []);
 
-  const fetchHomeData = async () => {
-    try {
-      const [enRes, hiRes, trRes] = await Promise.allSettled([
-        fetch(`${SAAVN_API}/search/playlists?query=top english&limit=8`).then(r => r.json()),
-        fetch(`${SAAVN_API}/search/playlists?query=top hindi&limit=8`).then(r => r.json()),
-        fetch(`${SAAVN_API}/search/playlists?query=trending&limit=8`).then(r => r.json())
-      ]);
-      const sections = [];
-      if (enRes.status === 'fulfilled' && enRes.value.success) {
-        sections.push({ title: 'Top English', items: enRes.value.data.results });
-      }
-      if (hiRes.status === 'fulfilled' && hiRes.value.success) {
-        sections.push({ title: 'Top Hindi', items: hiRes.value.data.results });
-      }
-      if (trRes.status === 'fulfilled' && trRes.value.success) {
-        sections.push({ title: 'Trending', items: trRes.value.data.results });
-      }
-      setHomePlaylists(sections);
-    } catch (e) {
-      console.error("Home fetch failed", e);
+  const searchSongs = async (query: string) => {
+    if (!query) return;
+    setIsSearching(true);
+    setActiveTab('search');
+    const results = await searchMusic(query);
+    setSearchResults(results);
+    setIsSearching(false);
+  };
+  
+  const playPlaylist = async (id: string) => {
+    const tracks = await fetchPlaylistTracks(id);
+    if (tracks.length > 0) {
+      setQueue(tracks);
+      setCurrentTrack(tracks[0]);
+      setActiveTab('queue');
     }
   };
 
-  const parseLrc = (lrc: string): LyricLine[] => {
-    const lines = lrc.split('\n');
-    const parsed: LyricLine[] = [];
-    const lineTimeRegex = /\[(\d+):(\d+\.\d+)\]/;
-    const wordRegex = /<(\d+):(\d+\.\d+)>\s*([^<]*)/g;
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const match = lineTimeRegex.exec(line);
-      if (match) {
-         const min = parseInt(match[1]);
-         const sec = parseFloat(match[2]);
-         const lineTime = min * 60 + sec;
-         
-         const textContent = line.replace(lineTimeRegex, '').trim();
-         
-         const words: LyricWord[] = [];
-         let wordMatch;
-         let hasWords = false;
-         
-         wordRegex.lastIndex = 0; 
-         while ((wordMatch = wordRegex.exec(textContent)) !== null) {
-            hasWords = true;
-            const wMin = parseInt(wordMatch[1]);
-            const wSec = parseFloat(wordMatch[2]);
-            words.push({ time: wMin * 60 + wSec, text: wordMatch[3].trim() });
-         }
-
-         const cleanText = textContent.replace(/<\d+:\d+\.\d+>/g, '').trim();
-         
-         parsed.push({ 
-           time: lineTime, 
-           text: cleanText,
-           words: hasWords ? words : undefined
-         });
-      } else if (line.trim() && !line.startsWith('[')) {
-         parsed.push({ time: -1, text: line.trim() });
-      }
+  const playTrack = (track: Track) => {
+    setCurrentTrack(track);
+    if (!queue.find(t => t.id === track.id)) {
+      setQueue(prev => [...prev, track]);
     }
-
-    // Process line durations and fake word-by-word if missing
-    for (let i = 0; i < parsed.length; i++) {
-      if (parsed[i].time !== -1 && i < parsed.length - 1 && parsed[i+1].time !== -1) {
-         parsed[i].duration = parsed[i+1].time - parsed[i].time;
-      } else {
-         parsed[i].duration = 5; // fallback 5 sec
-      }
-
-      // Automatically generate fake word-by-word sync if provider only gave line-sync
-      if (!parsed[i].words && parsed[i].text.length > 0 && parsed[i].time !== -1) {
-         const textWords = parsed[i].text.split(' ');
-         const timePerWord = (parsed[i].duration! * 0.8) / textWords.length;
-         const generatedWords: LyricWord[] = [];
-         let currentTime = parsed[i].time;
-         
-         for (const w of textWords) {
-            generatedWords.push({ time: currentTime, text: w });
-            currentTime += timePerWord;
-         }
-         parsed[i].words = generatedWords;
-      }
-    }
-
-    return parsed;
   };
 
-  const fetchLyrics = async (track: Track) => {
-    setLyrics('loading');
-    try {
-      if (track.source === 'ytm') {
-        const res = await fetch(`https://music-cgd8.onrender.com/api/lyrics/${track.id.replace('ytm-', '')}`);
-        if (res.ok) {
-           const data = await res.json();
-           if (data.lyrics && data.lyrics !== "Lyrics not available for this track.") {
-               setLyrics(parseLrc(data.lyrics));
-               return;
-           }
-        }
-      }
-      
-      const cleanName = track.name.replace(/\(.*\)/g, '').trim();
-      const res = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(cleanName)}&artist_name=${encodeURIComponent(track.artist.split(',')[0])}`);
-      if (res.ok) {
-         const data = await res.json();
-         if (data.syncedLyrics) {
-           setLyrics(parseLrc(data.syncedLyrics));
-         } else if (data.plainLyrics) {
-           setLyrics([{ time: -1, text: data.plainLyrics }]);
-         } else {
-           setLyrics('error');
-         }
-      } else {
-         setLyrics('error');
-      }
-    } catch {
-      setLyrics('error');
-    }
+  const prev = () => {
+    if (!currentTrack || queue.length === 0) return;
+    const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
+    const prevIndex = (currentIndex - 1 + queue.length) % queue.length;
+    setCurrentTrack(queue[prevIndex]);
+  };
+
+  const formatTime = (seconds: number) => {
+    if (!seconds || isNaN(seconds)) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   useEffect(() => {
     if (currentTrack) {
-      fetchLyrics(currentTrack);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack]);
-
-  useEffect(() => {
-    if (!currentTrack) return;
-    
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-
-    const audio = new Audio(currentTrack.src);
-    audio.preload = "auto";
-    audio.volume = volume;
-
-    const onTime = () => {
-      setProgress(audio.currentTime);
-      setDuration(audio.duration || currentTrack.duration || 0);
-      setIsPlaying(!audio.paused);
+      setLyrics('loading');
+      fetchTrackLyrics(currentTrack).then(setLyrics);
       
-      if (showLyricsPanel || (isMobilePlayerOpen && mobileView === 'lyrics') || isDetailedPlayerOpen) {
-        const activeLyric = document.getElementById('active-lyric');
-        if (activeLyric) {
-           let container;
-           if (isDetailedPlayerOpen) container = document.getElementById('lyrics-container-detailed');
-           else if (isMobilePlayerOpen) container = document.getElementById('lyrics-container-mobile');
-           else container = document.getElementById('lyrics-container-sidebar');
-           
-           if (container) {
-             const scrollPos = activeLyric.offsetTop - (container.clientHeight / 2) + (activeLyric.clientHeight / 2);
-             container.scrollTo({ top: scrollPos, behavior: 'smooth' });
-           } else {
-             activeLyric.scrollIntoView({ behavior: 'smooth', block: 'center' });
-           }
+      const onLyricsSync = (offsetTop: number, clientHeight: number) => {
+        if (showLyricsPanel || (isMobilePlayerOpen && mobileView === 'lyrics') || isDetailedPlayerOpen) {
+          let container;
+          if (isDetailedPlayerOpen) container = document.getElementById('lyrics-container-detailed');
+          else if (isMobilePlayerOpen) container = document.getElementById('lyrics-container-mobile');
+          else container = document.getElementById('lyrics-container-sidebar');
+          
+          if (container) {
+            const scrollPos = offsetTop - (container.clientHeight / 2) + (clientHeight / 2);
+            container.scrollTo({ top: scrollPos, behavior: 'smooth' });
+          }
         }
-      }
-    };
-    
-    const onEnded = () => {
-      next();
-    };
-
-    audio.addEventListener("timeupdate", onTime);
-    audio.addEventListener("ended", onEnded);
-
-    audioRef.current = audio;
-    audio.play().catch(e => console.log("Autoplay prevented:", e));
-    setIsPlaying(true);
-
-    return () => {
-      audio.removeEventListener("timeupdate", onTime);
-      audio.removeEventListener("ended", onEnded);
-      audio.pause();
-      audioRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack]);
-
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
+      };
+      
+      playAudioTrack(currentTrack, onLyricsSync);
+    }
+  }, [currentTrack, playAudioTrack, isDetailedPlayerOpen, isMobilePlayerOpen, mobileView, showLyricsPanel]);
 
   useEffect(() => {
     if (showLyricsPanel || (isMobilePlayerOpen && mobileView === 'lyrics') || isDetailedPlayerOpen) {
@@ -269,135 +134,6 @@ export default function MusicPlayer() {
       }, 100);
     }
   }, [showLyricsPanel, isMobilePlayerOpen, mobileView, isDetailedPlayerOpen]);
-
-  const searchSongs = async (query: string) => {
-    if (!query) return;
-    setIsSearching(true);
-    setActiveTab('search');
-    try {
-      const [saavnRes, ytmRes] = await Promise.allSettled([
-        fetch(`${SAAVN_API}/search/songs?query=${encodeURIComponent(query)}&limit=10`).then(r => r.json()),
-        fetch(`${YTM_API}/search?q=${encodeURIComponent(query)}&filter=songs`).then(r => r.json())
-      ]);
-
-      let combined: Track[] = [];
-
-      if (saavnRes.status === 'fulfilled' && saavnRes.value.success) {
-        const sTracks = saavnRes.value.data.results.map((t: Record<string, unknown>) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tAny = t as any;
-          return {
-            id: `saavn-${tAny.id}`,
-            name: tAny.name,
-            artist: tAny.primaryArtists || tAny.artists?.primary?.[0]?.name || "Unknown",
-            albumArt: tAny.image?.[2]?.link || tAny.image?.[tAny.image?.length - 1]?.url || "",
-            src: tAny.downloadUrl?.[tAny.downloadUrl?.length - 1]?.link || tAny.downloadUrl?.[tAny.downloadUrl?.length - 1]?.url || "",
-            duration: tAny.duration,
-            source: 'saavn' as const
-          };
-        }).filter((t: Track) => t.src !== "");
-        combined = [...combined, ...sTracks];
-      }
-
-      if (ytmRes.status === 'fulfilled' && Array.isArray(ytmRes.value)) {
-        const yTracks = ytmRes.value.slice(0, 5).map((t: Record<string, unknown>) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tAny = t as any;
-          return {
-            id: `ytm-${tAny.videoId}`,
-            name: tAny.title,
-            artist: tAny.artists?.map((a: { name: string }) => a.name).join(', ') || "Unknown",
-            albumArt: tAny.thumbnails?.[tAny.thumbnails?.length - 1]?.url || "",
-            src: `${YTM_API}/stream/${tAny.videoId}`,
-            source: 'ytm' as const
-          };
-        });
-        combined = [...combined, ...yTracks];
-      }
-
-      setSearchResults(combined);
-    } catch (error) {
-      console.error("Search failed", error);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-  
-  const playPlaylist = async (id: string) => {
-    try {
-      const res = await fetch(`${SAAVN_API}/playlists?id=${id}&limit=20`);
-      const data = await res.json();
-      if (data.success && data.data && data.data.songs) {
-        const tracks = data.data.songs.map((t: Record<string, unknown>) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const tAny = t as any;
-          return {
-            id: `saavn-${tAny.id}`,
-            name: tAny.name,
-            artist: tAny.primaryArtists || "Unknown",
-            albumArt: tAny.image?.[2]?.link || "",
-            src: tAny.downloadUrl?.[tAny.downloadUrl?.length - 1]?.link || "",
-            source: 'saavn' as const
-          };
-        }).filter((t: Track) => t.src !== "");
-        if (tracks.length > 0) {
-          setQueue(tracks);
-          setCurrentTrack(tracks[0]);
-          setActiveTab('queue');
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const playTrack = (track: Track) => {
-    setCurrentTrack(track);
-    if (!queue.find(t => t.id === track.id)) {
-      setQueue(prev => [...prev, track]);
-    }
-  };
-
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (audio.paused) {
-      audio.play().catch(() => {});
-      setIsPlaying(true);
-    } else {
-      audio.pause();
-      setIsPlaying(false);
-    }
-  };
-
-  const next = () => {
-    if (!currentTrack || queue.length === 0) return;
-    const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
-    const nextIndex = (currentIndex + 1) % queue.length;
-    setCurrentTrack(queue[nextIndex]);
-  };
-  
-  const prev = () => {
-    if (!currentTrack || queue.length === 0) return;
-    const currentIndex = queue.findIndex(t => t.id === currentTrack.id);
-    const prevIndex = (currentIndex - 1 + queue.length) % queue.length;
-    setCurrentTrack(queue[prevIndex]);
-  };
-
-  const seek = (value: number) => {
-    const audio = audioRef.current;
-    if (!audio || duration === 0) return;
-    const newTime = (value / 100) * duration;
-    audio.currentTime = newTime;
-    setProgress(newTime);
-  };
-
-  const formatTime = (seconds: number) => {
-    if (!seconds || isNaN(seconds)) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-  };
 
   const progressValue = duration > 0 ? (progress / duration) * 100 : 0;
 
@@ -441,12 +177,12 @@ export default function MusicPlayer() {
         <div className="absolute left-1/2 -translate-x-1/2 w-full max-w-[400px] h-10 bg-white/60 dark:bg-black/30 rounded-md border border-gray-200/50 dark:border-white/5 flex items-center px-2 shadow-inner group">
           {currentTrack ? (
              <>
-               <div className="relative w-7 h-7 rounded-sm overflow-hidden flex-shrink-0 shadow-sm mr-3 bg-gray-200 dark:bg-gray-800 cursor-pointer" onClick={() => setIsDetailedPlayerOpen(!isDetailedPlayerOpen)}>
+               <button type="button" aria-label="Toggle Detailed Player" className="relative w-7 h-7 rounded-sm overflow-hidden flex-shrink-0 shadow-sm mr-3 bg-gray-200 dark:bg-gray-800 p-0 border-none text-left" onClick={() => setIsDetailedPlayerOpen(!isDetailedPlayerOpen)}>
                  <Image src={currentTrack.albumArt} alt={currentTrack.name} fill className="object-cover group-hover:scale-105 transition-transform" />
                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     {isDetailedPlayerOpen ? <Minimize2 size={12} className="text-white" /> : <Maximize2 size={12} className="text-white" />}
                  </div>
-               </div>
+               </button>
                <div className="flex-1 min-w-0 flex flex-col justify-center h-full">
                   <div className="flex items-center justify-center gap-1 -mt-0.5">
                     <span className="text-[11px] font-semibold truncate text-gray-900 dark:text-gray-100">{currentTrack.name}</span>
@@ -455,15 +191,17 @@ export default function MusicPlayer() {
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[9px] text-gray-500 w-6 text-right">{formatTime(progress)}</span>
-                    <div 
-                      className="flex-1 h-1 bg-gray-300/50 dark:bg-gray-700/50 rounded-full cursor-pointer relative"
+                    <button
+                      type="button"
+                      aria-label="Seek"
+                      className="w-full h-1 bg-gray-300 dark:bg-gray-700 rounded-full cursor-pointer relative p-0 border-none block"
                       onClick={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
                         seek(((e.clientX - rect.left) / rect.width) * 100);
                       }}
                     >
                       <div className="absolute top-0 left-0 h-full bg-gray-600 dark:bg-gray-400 rounded-full hover:bg-red-500 transition-colors" style={{ width: `${progressValue}%` }}></div>
-                    </div>
+                    </button>
                     <span className="text-[9px] text-gray-500 w-6">{formatTime(duration)}</span>
                   </div>
                </div>
@@ -488,14 +226,16 @@ export default function MusicPlayer() {
             />
           </div>
           <button 
+            type="button"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${showLyricsPanel ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#3a3a3c] dark:text-gray-300 dark:hover:bg-[#4a4a4c]'}`}
             onClick={() => setShowLyricsPanel(!showLyricsPanel)}
-            className={`p-1.5 rounded-md transition-colors ${showLyricsPanel ? 'bg-black/10 dark:bg-white/10 text-red-500' : 'text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5'}`}
           >
             <MessageSquare size={14} className={showLyricsPanel ? 'fill-current' : ''} />
           </button>
           <button 
+            type="button"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeTab === 'queue' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-[#3a3a3c] dark:text-gray-300 dark:hover:bg-[#4a4a4c]'}`}
             onClick={() => setActiveTab(activeTab === 'queue' ? 'home' : 'queue')}
-            className={`p-1.5 rounded-md transition-colors ${activeTab === 'queue' ? 'bg-black/10 dark:bg-white/10 text-red-500' : 'text-gray-600 dark:text-gray-400 hover:bg-black/5 dark:hover:bg-white/5'}`}
           >
             <ListMusic size={14} className={activeTab === 'queue' ? 'text-red-500' : ''} />
           </button>
@@ -634,7 +374,7 @@ export default function MusicPlayer() {
                     <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar">
                       {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {section.items.map((pl: any) => (
-                        <div key={pl.id} className="min-w-[140px] max-w-[140px] cursor-pointer group" onClick={() => playPlaylist(pl.id)}>
+                        <button type="button" key={pl.id} className="min-w-[140px] max-w-[140px] group p-0 border-none bg-transparent text-left block" onClick={() => playPlaylist(pl.id)}>
                           <div className="relative w-[140px] h-[140px] rounded-lg overflow-hidden mb-2 shadow-sm bg-gray-200 dark:bg-gray-800">
                             {pl.image && pl.image.length > 0 && (
                               <Image src={pl.image[pl.image.length - 1].link || pl.image[pl.image.length - 1].url || "/pbx1.jpg"} alt={pl.title || pl.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="140px" />
@@ -647,7 +387,7 @@ export default function MusicPlayer() {
                           </div>
                           <h3 className="font-medium text-[12px] truncate text-gray-900 dark:text-gray-100 leading-tight">{pl.title || pl.name}</h3>
                           <p className="text-[10px] text-gray-500 truncate mt-0.5">{pl.songCount ? `${pl.songCount} songs` : pl.language}</p>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   </div>

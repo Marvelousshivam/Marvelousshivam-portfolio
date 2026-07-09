@@ -1,20 +1,11 @@
 // Imports removed to fix lint
 import {
-  FinderIcon,
-  SafariIcon,
-  VSCodeIcon,
-  TerminalIcon,
-  MailIcon,
-  MusicIcon,
-  FolderIcon,
-  NotesIcon,
-  TrashIcon,
-  GameIcon,
-  AppStoreIcon
+  TrashIcon
 } from './MacIcons'
 import { ReactNode, useRef, useState, useEffect } from 'react'
 import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion'
 import { useStore } from '../store'
+import { APPS } from '../config/apps'
 
 interface DockItemProps {
   id: string;
@@ -86,6 +77,8 @@ export default function Dock({ toggleWindow }: DockProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const dockApps = APPS.filter(app => app.showInDock);
+
   return (
     <div className={`fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 w-auto max-w-[95vw] z-[9999] ${isMobile ? 'overflow-x-auto no-scrollbar rounded-2xl' : ''}`}>
       <div 
@@ -96,45 +89,22 @@ export default function Dock({ toggleWindow }: DockProps) {
         {/* Fixed-height glass background that doesn't scale vertically */}
         <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-white/40 dark:bg-black/40 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/40 dark:border-white/20 pointer-events-none" />
 
-        <DockItem id="about" label="About Me (Finder)" onClick={() => toggleWindow('about')} isOpen={openApps.includes('about')} mouseX={mouseX} isMobile={isMobile}>
-          <FinderIcon />
-        </DockItem>
-
-        <DockItem id="work-experience" label="Work Experience" onClick={() => toggleWindow('work-experience')} isOpen={openApps.includes('work-experience')} mouseX={mouseX} isMobile={isMobile}>
-          <FolderIcon />
-        </DockItem>
-        
-        <DockItem id="projects" label="Projects (App Store)" onClick={() => toggleWindow('projects')} isOpen={openApps.includes('projects')} mouseX={mouseX} isMobile={isMobile}>
-          <AppStoreIcon />
-        </DockItem>
-
-        <DockItem id="contact" label="Mail" onClick={() => toggleWindow('contact')} isOpen={openApps.includes('contact')} mouseX={mouseX} isMobile={isMobile}>
-          <MailIcon />
-        </DockItem>
-
-        <DockItem id="music-player" label="Music" onClick={() => toggleWindow('music-player')} isOpen={openApps.includes('music-player')} mouseX={mouseX} isMobile={isMobile}>
-          <MusicIcon />
-        </DockItem>
-
-        <DockItem id="vscode" label="VSCode" onClick={() => toggleWindow('vscode')} isOpen={openApps.includes('vscode')} mouseX={mouseX} isMobile={isMobile}>
-          <VSCodeIcon />
-        </DockItem>
-
-        <DockItem id="browser" label="Safari" onClick={() => toggleWindow('browser')} isOpen={openApps.includes('browser')} mouseX={mouseX} isMobile={isMobile}>
-          <SafariIcon />
-        </DockItem>
-
-        <DockItem id="terminal" label="Terminal" onClick={() => toggleWindow('terminal')} isOpen={openApps.includes('terminal')} mouseX={mouseX} isMobile={isMobile}>
-          <TerminalIcon />
-        </DockItem>
-
-        <DockItem id="resume" label="Resume" onClick={() => toggleWindow('resume')} isOpen={openApps.includes('resume')} mouseX={mouseX} isMobile={isMobile}>
-          <NotesIcon />
-        </DockItem>
-
-        <DockItem id="flappy-bird" label="Flappy Bird" onClick={() => toggleWindow('flappy-bird')} isOpen={openApps.includes('flappy-bird')} mouseX={mouseX} isMobile={isMobile}>
-          <GameIcon />
-        </DockItem>
+        {dockApps.map((app) => {
+          const Icon = app.icon;
+          return (
+            <DockItem 
+              key={app.id} 
+              id={app.id} 
+              label={app.dockLabel} 
+              onClick={() => toggleWindow(app.id)} 
+              isOpen={openApps.includes(app.id)} 
+              mouseX={mouseX} 
+              isMobile={isMobile}
+            >
+              <Icon />
+            </DockItem>
+          );
+        })}
         
         {/* Separator */}
         <div className="w-[1px] h-12 bg-black/10 dark:bg-white/20 mx-2 self-center rounded-full" />
