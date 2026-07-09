@@ -87,7 +87,8 @@ export default function MainContent() {
             <>
               {/* HERO CAROUSEL */}
               <div className="w-full flex gap-4 overflow-x-auto pb-8 no-scrollbar snap-x snap-mandatory">
-                 {homePlaylists[0]?.items.slice(0, 4).map((pl: any, idx: number) => (
+                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                 {homePlaylists[0]?.items.slice(0, 4).map((pl: any) => (
                    <button 
                      key={`hero-${pl.id}`} 
                      className="relative min-w-[85vw] md:min-w-[600px] h-[280px] md:h-[340px] rounded-2xl overflow-hidden snap-center shrink-0 group text-left border-none p-0 cursor-pointer"
