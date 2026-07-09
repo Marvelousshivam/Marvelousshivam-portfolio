@@ -67,7 +67,7 @@ export default function Window({ id, title, children, frameless = false }: Windo
       initial={{ scale: 0.8, opacity: 0, x: windowState.position.x, y: windowState.position.y }}
       animate={
         windowState.isMaximized || isMobile
-          ? { scale: 1, opacity: 1, x: 0, y: 32, width: "100vw", height: "calc(100vh - 32px - 80px)" } // Leaves 80px for the dock
+          ? { scale: 1, opacity: 1, x: 0, y: 32, width: "100vw", height: "calc(100dvh - 32px - 80px)" } // Leaves 80px for the dock
           : { scale: 1, opacity: 1, x: windowState.position.x, y: windowState.position.y, width: windowState.size.width, height: windowState.size.height }
       }
       exit={{ scale: 0.95, opacity: 0 }}
@@ -77,7 +77,7 @@ export default function Window({ id, title, children, frameless = false }: Windo
         position: "absolute",
         minWidth: isMobile ? "300px" : "400px",
         minHeight: isMobile ? "200px" : "300px",
-        maxHeight: "calc(100vh - 32px - 80px)", // Prevents normal windows from overlapping the dock
+        maxHeight: "calc(100dvh - 32px - 80px)", // Prevents normal windows from overlapping the dock
         maxWidth: "100vw",
       }}
       className={`bg-white/25 dark:bg-black/25 backdrop-blur-xl rounded-xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/10 ${

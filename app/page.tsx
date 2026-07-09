@@ -109,7 +109,7 @@ export default function Home() {
     <ThemeProvider>
       <div
         onClick={handleGlobalClick}
-        className="min-h-screen min-w-full overflow-hidden text-black dark:text-white transition-colors duration-300 relative"
+        className="min-h-[100dvh] min-w-full overflow-hidden text-black dark:text-white transition-colors duration-300 relative"
       >
         <Image 
           src={wallpaper1} 

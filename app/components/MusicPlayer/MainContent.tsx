@@ -62,7 +62,7 @@ export default function MainContent() {
   );
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 pt-16 md:p-8 lg:px-12 pb-24 md:pb-8 no-scrollbar relative bg-white dark:bg-[#1c1c1e] transition-colors">
+    <div className="flex-1 overflow-y-auto p-4 pt-16 md:p-8 lg:px-12 pb-[160px] md:pb-8 no-scrollbar relative bg-white dark:bg-[#1c1c1e] transition-colors">
       
       {/* HOME VIEW (Listen Now / Browse) */}
       {(activeTab === 'home' || activeTab === 'browse' || activeTab === 'library') && (
