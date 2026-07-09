@@ -265,7 +265,7 @@ const BlogApp = () => {
                 prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-gray-900 dark:prose-headings:text-white
                 prose-p:text-gray-700 dark:prose-p:text-gray-300 prose-p:leading-relaxed
                 prose-a:text-blue-500 hover:prose-a:text-blue-600 prose-img:rounded-2xl prose-img:shadow-2xl
-                prose-strong:text-gray-900 dark:prose-strong:text-white overflow-x-hidden"
+                prose-strong:text-gray-900 dark:prose-strong:text-white"
               >
                 <MDXRemote {...activePost.mdxSource} components={components} />
               </div>
