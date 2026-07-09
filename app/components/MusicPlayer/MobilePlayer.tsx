@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import Image from 'next/image';
-import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Search, Loader2, MessageSquare, ChevronDown, Repeat, Shuffle, Home, Music2, Disc3, Mic2, LayoutGrid, Clock, MoreHorizontal } from "lucide-react";
+import { motion, useAnimation, useMotionValue } from 'framer-motion';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Search, Loader2, MessageSquare, ChevronDown, Home, Music2, LayoutGrid, MoreHorizontal } from "lucide-react";
 import { useAudioStore } from '../../store/audioStore';
 import { useMusicAppStore } from '../../store/musicAppStore';
 
@@ -33,6 +33,7 @@ export default function MobilePlayer({ lyrics }: MobilePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // When dragging the mini player up
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDragEnd = (event: any, info: any) => {
     const threshold = -100; // Swipe up 100px to open
     if (info.offset.y < threshold || info.velocity.y < -500) {
@@ -42,6 +43,7 @@ export default function MobilePlayer({ lyrics }: MobilePlayerProps) {
   };
 
   // When dragging the full player down
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFullPlayerDragEnd = (event: any, info: any) => {
     const threshold = 150; // Swipe down 150px to close
     if (info.offset.y > threshold || info.velocity.y > 500) {
