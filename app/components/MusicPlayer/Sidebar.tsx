@@ -20,6 +20,7 @@ export default function Sidebar() {
     setIsSearching(false);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const NavItem = ({ tab, icon: Icon, label }: { tab: any, icon: any, label: string }) => (
     <button 
       onClick={() => setActiveTab(tab)}

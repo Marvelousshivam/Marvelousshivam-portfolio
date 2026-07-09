@@ -13,7 +13,7 @@ import LyricsPanel from "./MusicPlayer/LyricsPanel";
 import MobilePlayer from "./MusicPlayer/MobilePlayer";
 
 export default function MusicPlayer() {
-  const { currentTrack, togglePlay, next, prev, volume, setVolume, isPlaying } = useAudioStore();
+  const { currentTrack, togglePlay, next, prev, volume, setVolume } = useAudioStore();
   const { isDetailedPlayerOpen, showLyricsPanel, isMobilePlayerOpen, mobileView } = useMusicAppStore();
 
   const [lyrics, setLyrics] = useState<LyricLine[] | 'loading' | 'error' | null>(null);

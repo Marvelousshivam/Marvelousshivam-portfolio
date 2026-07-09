@@ -52,6 +52,7 @@ export default function MobilePlayer({ lyrics }: MobilePlayerProps) {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const TabItem = ({ tab, icon: Icon, label }: { tab: any, icon: any, label: string }) => (
     <button 
       onClick={() => setActiveTab(tab)}

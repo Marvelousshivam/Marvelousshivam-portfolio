@@ -106,6 +106,7 @@ export const fetchPlaylistTracks = async (id: string): Promise<Track[]> => {
         return {
           id: `saavn-${t.id}`,
           name: t.name,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           artist: t.primaryArtists || t.artists?.primary?.map((a: any) => a.name).join(', ') || "Unknown",
           albumArt: t.image?.[2]?.link || t.image?.[t.image?.length - 1]?.url || "",
           src: t.downloadUrl?.[t.downloadUrl?.length - 1]?.link || t.downloadUrl?.[t.downloadUrl?.length - 1]?.url || "",
