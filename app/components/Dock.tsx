@@ -31,7 +31,7 @@ const DockItem = ({ label, onClick, children, isOpen, mouseX, isMobile }: DockIt
 
   // True macOS magnification scaling based on proximity to mouse pointer
   // Animate width/height to push adjacent items away instead of just scaling visually
-  const sizeSync = useTransform(distance, [-150, 0, 150], [52, isMobile ? 52 : 90, 52]);
+  const sizeSync = useTransform(distance, [-150, 0, 150], [52, isMobile ? 52 : 110, 52]);
   const size = useSpring(sizeSync, { mass: 0.1, stiffness: 200, damping: 15 });
 
   return (
@@ -83,11 +83,11 @@ export default function Dock({ toggleWindow }: DockProps) {
     <div className={`fixed bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 w-auto max-w-[95vw] z-[9999] ${isMobile ? 'overflow-x-auto no-scrollbar rounded-2xl' : ''}`}>
       <div 
         className={`relative flex items-end gap-1 px-3 pt-12 ${isMobile ? 'min-w-max' : ''}`}
-        onMouseMove={(e) => mouseX.set(e.pageX)}
+        onMouseMove={(e) => mouseX.set(e.clientX)}
         onMouseLeave={() => mouseX.set(Infinity)}
       >
         {/* Fixed-height glass background that doesn't scale vertically */}
-        <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-white/40 dark:bg-black/40 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/40 dark:border-white/20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-[68px] bg-white/20 dark:bg-black/30 backdrop-blur-3xl rounded-[1.5rem] shadow-[0_8px_32px_rgba(0,0,0,0.15)] border border-white/40 dark:border-white/10 pointer-events-none" />
 
         {dockApps.map((app) => {
           const Icon = app.icon;

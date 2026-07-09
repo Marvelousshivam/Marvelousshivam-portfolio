@@ -70,8 +70,8 @@ export default function Window({ id, title, children, frameless = false }: Windo
           ? { scale: 1, opacity: 1, x: 0, y: 32, width: "100vw", height: "calc(100vh - 32px - 80px)" } // Leaves 80px for the dock
           : { scale: 1, opacity: 1, x: windowState.position.x, y: windowState.position.y, width: windowState.size.width, height: windowState.size.height }
       }
-      exit={{ scale: 0.8, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      exit={{ scale: 0.95, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
       style={{
         zIndex: windowState.zIndex,
         position: "absolute",

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Wifi,
   WifiOff,
@@ -60,6 +61,7 @@ const MenuBar: React.FC<MenuBarProps> = ({ switchWallpaper }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
   const [isWallpaperSelectorOpen, setIsWallpaperSelectorOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -84,6 +86,8 @@ const MenuBar: React.FC<MenuBarProps> = ({ switchWallpaper }) => {
   const currentMenu = activeApp && appMenus[activeApp] ? appMenus[activeApp] : defaultMenu;
   
   const toggleControlCenter = useStore(state => state.toggleControlCenter);
+  const openApp = useStore(state => state.openApp);
+  const closeApp = useStore(state => state.closeApp);
 
   const handleCloseWallpaperSelector = (): void => {
     setIsWallpaperSelectorOpen(false);
@@ -182,21 +186,93 @@ const MenuBar: React.FC<MenuBarProps> = ({ switchWallpaper }) => {
         className={`fixed top-0 left-0 right-0 h-8 sm:h-8 ${
           theme === "light"
             ? "bg-white/40 text-black"
-            : "bg-black/40 text-white"
-        } backdrop-blur-2xl flex items-center justify-between px-2 sm:px-4 z-50 transition-colors duration-300 font-sans border-b border-black/5 dark:border-white/10`}
+            : "bg-black/30 text-white"
+        } backdrop-blur-3xl flex items-center justify-between px-2 sm:px-4 z-[9999] transition-colors duration-300 font-sans border-b border-black/5 dark:border-white/10`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1 cursor-default">
-            {/* Apple Icon approximation or Logo */}
+        <div className="flex items-center space-x-2">
+          <div 
+            className="flex items-center space-x-1 cursor-default relative px-3 py-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+            onMouseEnter={() => setActiveMenu('apple')}
+            onMouseLeave={() => setActiveMenu(null)}
+          >
             <svg viewBox="0 0 384 512" className="w-3.5 h-3.5 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-            <span className="font-bold text-sm ml-3">{activeTitle}</span>
+            <AnimatePresence>
+              {activeMenu === 'apple' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  transition={{ duration: 0.1 }}
+                  className="absolute top-full left-0 mt-1 w-56 bg-white/70 dark:bg-[#1E1E1E]/70 backdrop-blur-3xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] border border-white/40 dark:border-white/10 py-1.5 z-[99999] overflow-hidden"
+                >
+                  <button onClick={() => { openApp('about'); setActiveMenu(null); }} className="w-full text-left px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors">About This Mac</button>
+                  <div className="w-full h-px bg-black/10 dark:bg-white/10 my-1"></div>
+                  <button onClick={() => { toggleTheme(); setActiveMenu(null); }} className="w-full text-left px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors">System Settings...</button>
+                  <button className="w-full text-left px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors">App Store...</button>
+                  <div className="w-full h-px bg-black/10 dark:bg-white/10 my-1"></div>
+                  <button className="w-full text-left px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors">Sleep</button>
+                  <button className="w-full text-left px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors">Restart...</button>
+                  <button className="w-full text-left px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors">Shut Down...</button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="hidden md:flex space-x-4 text-xs font-medium opacity-80">
+          <span className="font-bold text-sm px-2 cursor-default">{activeTitle}</span>
+          <div className="hidden md:flex space-x-1 text-[13px] font-medium opacity-90">
             {currentMenu.map((item, idx) => (
-              <span key={idx} className="cursor-default hover:text-black dark:hover:text-white transition-colors">{item}</span>
+              <div 
+                key={idx} 
+                className="relative px-3 py-1 rounded cursor-default hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                onMouseEnter={() => setActiveMenu(item)}
+                onMouseLeave={() => setActiveMenu(null)}
+              >
+                {item}
+                <AnimatePresence>
+                  {activeMenu === item && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.1 }}
+                      className="absolute top-full left-0 mt-1 w-48 bg-white/70 dark:bg-[#1E1E1E]/70 backdrop-blur-3xl rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] border border-white/40 dark:border-white/10 py-1.5 z-[99999] overflow-hidden"
+                    >
+                      {item === "File" && (
+                        <>
+                          <button className="w-full flex justify-between px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors opacity-50 cursor-not-allowed">
+                            <span>New Window</span>
+                            <span>⌘N</span>
+                          </button>
+                          <div className="w-full h-px bg-black/10 dark:bg-white/10 my-1"></div>
+                          <button 
+                            onClick={() => { if(activeApp) closeApp(activeApp); setActiveMenu(null); }} 
+                            className="w-full flex justify-between px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors"
+                          >
+                            <span>Close Window</span>
+                            <span>⌘W</span>
+                          </button>
+                        </>
+                      )}
+                      {item === "View" && (
+                        <>
+                          <button 
+                            onClick={() => { toggleFullscreen(); setActiveMenu(null); }} 
+                            className="w-full flex justify-between px-4 py-1 hover:bg-blue-500 hover:text-white text-[13px] transition-colors"
+                          >
+                            <span>{isFullscreen ? 'Exit Full Screen' : 'Enter Full Screen'}</span>
+                            <span>fn F</span>
+                          </button>
+                        </>
+                      )}
+                      {item !== "File" && item !== "View" && (
+                        <div className="px-4 py-1 text-[13px] opacity-50 italic">No actions available</div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ))}
           </div>
         </div>
